@@ -1,7 +1,7 @@
 # python-library
 
 #### Description
-使用python实现检测屏幕模拟中心颜色变化并模拟键盘输入过程，使用到cv2，pyautogui，numpy，PIL等库
+Using Python to detect color changes in the simulated center of the screen and simulate the keyboard input process, utilizing libraries such as cv2, pyautogui, numpy, PIL, and others.
 
 #### Declaration
 This project uses the following libraries:
