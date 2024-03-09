@@ -1,0 +1,106 @@
+import cv2
+import pyautogui
+import numpy as np
+from PIL import ImageGrab
+import time
+import tkinter as tk
+from threading import Thread, Event
+
+class MyApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("GUI应用程序")
+
+        
+        self.root.iconbitmap(r'image.ico')
+
+        self.start_label = tk.Label(root, text="作者：【偷雞小隊】Stephen", state=tk.DISABLED)
+        self.start_label.pack(pady=5)
+
+        self.start_button = tk.Button(root, text="開始搶車", command=self.start_operation)
+        self.start_button.pack(pady=5)
+
+        self.stop_button = tk.Button(root, text="停止搶車", command=self.stop_operation)
+        self.stop_button.pack(pady=5)
+
+        self.exit_button = tk.Button(root, text="退出程序", command=self.exit_application)
+        self.exit_button.pack(pady=5)
+
+        self.is_running = False
+        self.stop_event = Event()
+        self.operation_thread = None
+
+       
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+
+    def start_operation(self):
+        if not self.is_running:
+            self.is_running = True
+            self.stop_event.clear()
+            self.operation_thread = Thread(target=self.run_operation)
+            self.operation_thread.start()
+            self.start_label.config(text="操作进行中...", state=tk.NORMAL)
+
+    def stop_operation(self):
+        self.is_running = False
+        self.stop_event.set()
+        if self.operation_thread is not None and self.operation_thread.is_alive():
+            self.operation_thread.join()  
+        self.start_label.config(text="作者：【偷雞小隊】Stephen", state=tk.DISABLED)
+
+    def exit_application(self):
+        self.stop_operation()
+        self.root.destroy() 
+
+    def on_closing(self):
+        self.exit_application()
+
+    def run_operation(self):
+        screenshot = pyautogui.screenshot()
+        screenshot = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR)
+
+        height, width, _ = screenshot.shape
+        center_x, center_y = width // 2, height // 2
+        center_pixel_value = screenshot[center_y, center_x]
+        print(center_pixel_value)
+
+        threshold = 5
+
+        while not self.stop_event.is_set():
+            if (center_pixel_value > threshold).any():
+                time.sleep(0.1)
+                screenshot = ImageGrab.grab()
+                screenshot = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR)
+                height, width, _ = screenshot.shape
+                center_x, center_y = width // 2, height // 2
+                center_pixel_value = screenshot[center_y, center_x]
+                print(center_pixel_value)
+            else:
+                while (center_pixel_value < threshold).any() and not self.stop_event.is_set():
+                    pyautogui.press('`')
+                    pyautogui.hotkey('ctrl', 'v')
+                    pyautogui.press('enter')
+
+                    screenshot = ImageGrab.grab()
+                    screenshot = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR)
+                    height, width, _ = screenshot.shape
+                    center_x, center_y = width // 2, height // 2
+                    center_pixel_value = screenshot[center_y, center_x]
+                    print(center_pixel_value)
+
+                    if (center_pixel_value >= threshold).any():
+                        for i in range(6):
+                            pyautogui.press('`')
+                            pyautogui.hotkey('ctrl', 'v')
+                            pyautogui.press('enter')
+                        break
+
+            if self.stop_event.is_set():
+                break
+
+        time.sleep(0.5)
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = MyApp(root)
+    root.mainloop()
